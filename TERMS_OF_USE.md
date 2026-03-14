@@ -240,8 +240,8 @@ Telegram-бот хранит в базе данных:
 
 По вопросам, связанным с Условиями использования:
 
-- **Telegram:** @aluf_support
-- **GitHub:** https://github.com/your-username/alufproxy
+- **Telegram:** @alufproxy_bot
+- **GitHub:** https://github.com/Skalettson/alufproxy
 - **Email:** (не предоставляется)
 
 ---
