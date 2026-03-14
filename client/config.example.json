@@ -1,0 +1,16 @@
+# AlufProxy Client configuration
+{
+  "vless_key": "",
+  "socks5_port": 1080,
+  "socks5_host": "127.0.0.1",
+  "auto_start": false,
+  "dpi_bypass": false,
+  "mode": "auto",
+  "verbose": false
+}
+
+# Режимы работы (mode):
+# - auto     : Автоматический выбор (VLESS или Direct)
+# - vless    : Только VLESS Reality
+# - direct   : Прямое подключение (DPI-обход)
+# - hybrid   : Telegram через VLESS, остальное через Direct

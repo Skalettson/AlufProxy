@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # XRay сервер с VLESS Reality
+  xray:
+    image: teddysun/xray:latest
+    container_name: alufproxy-xray
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./docker/xray:/etc/xray
+    environment:
+      - TZ=Europe/Moscow
+    cap_add:
+      - NET_ADMIN
+    configs:
+      - source: xray_config
+        target: /etc/xray/config.json
+    command: ["run", "-c", "/etc/xray/config.json"]
+
+  # Telegram бот
+  bot:
+    build:
+      context: ../bot
+      dockerfile: Dockerfile
+    container_name: alufproxy-bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
+      - SERVER_PORT=443
+      - ADMIN_IDS=${ADMIN_IDS}
+      - DATABASE_PATH=/app/data/bot.db
+      - TRIAL_DAYS=3
+    volumes:
+      - ./bot-data:/app/data
+    depends_on:
+      - xray
+
+  # API сервер для генерации ключей
+  api:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: alufproxy-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - API_KEY=${API_KEY:-alufproxy-secret-key}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
+      - SERVER_PORT=443
+      - DATABASE_PATH=/app/data/keys.db
+    volumes:
+      - ./api-data:/app/data
+    depends_on:
+      - xray
+
+volumes:
+  bot-data:
+  api-data:
+
+configs:
+  xray_config:
+    file: ./docker/xray_config.json

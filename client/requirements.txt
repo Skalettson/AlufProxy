@@ -1,0 +1,12 @@
+cryptography==46.0.5
+customtkinter==5.2.2
+Pillow==12.1.1
+psutil==7.0.0
+pystray==0.19.5
+pyperclip==1.9.0
+aiohttp>=3.9.0
+pywin32>=306; sys_platform == 'win32'
+
+# Для тестов
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
