@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="AlufProxy Key API")
 
 # Конфигурация
-API_KEY = "your-secret-api-key-here"  # Заменить на случайный ключ
+API_KEY = "AlufProxy:L3iKh38iFLD1GdCOJaaTmUlx4YNRwqjYKu8znbGFaDEOtpPgdGN7mfeFScRldKXfbxDIKAc1GuJ0mpVLUreowyZZ4LTLv8Nc74ZDzdJ9gRnVj0HwYkdG9Hy92HkllDry05zRtVjaQrSxYKJfMgsVyy65o7OyKkuHGKU8OA8v1dCS4Olz2CjcQngDj7lawB0KpJbb4nzDczPzughV3qC7M7z69uutQ2jTcLMOMkRCxCIAPynZD2BywVneUTwut1QZ"  # Заменить на случайный ключ
 DATABASE_PATH = "keys.db"
-SERVER_DOMAIN = "proxy.example.com"
+SERVER_DOMAIN = "alufproxy.ddns.net"
 SERVER_PORT = 443
 SNI_DOMAIN = "gosuslugi.ru"
 FALLBACK_DOMAIN = "gosuslugi.ru"
