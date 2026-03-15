@@ -340,7 +340,7 @@ async def callback_get_key(callback: CallbackQuery):
         port=SERVER_PORT,
         public_key=public_key,
         short_id=short_id,
-        sni="gosuslugi.ru"
+        sni="vtb.ru"
     )
     
     expires_at = sub_end

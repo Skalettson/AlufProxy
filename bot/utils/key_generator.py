@@ -95,7 +95,7 @@ def generate_vless_key(
 def generate_full_config(
     domain: str,
     port: int = 443,
-    sni: str = "gosuslugi.ru"
+    sni: str = "vtb.ru"
 ) -> dict:
     """
     Генерация полной конфигурации для клиента

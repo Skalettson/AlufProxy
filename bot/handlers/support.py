@@ -59,7 +59,7 @@ def create_get_key_handlers(db: Database, server_domain: str, server_port: int):
             uuid_key=uuid_key,
             server_domain=server_domain,
             server_port=server_port,
-            sni="gosuslugi.ru",
+            sni="vtb.ru",
             public_key=public_key,
             short_id=short_id
         )

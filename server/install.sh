@@ -22,8 +22,8 @@ echo -e "${GREEN}✅ Права root подтверждены${NC}"
 echo ""
 
 DOMAIN=${DOMAIN:-"alufproxy.ddns.net"}
-SNI_DOMAIN=${SNI_DOMAIN:-"gosuslugi.ru"}
-FALLBACK_DOMAIN=${SNI_DOMAIN:-"gosuslugi.ru"}
+SNI_DOMAIN=${SNI_DOMAIN:-"vtb.ru"}
+FALLBACK_DOMAIN=${SNI_DOMAIN:-"vtb.ru"}
 VLESS_PORT=${VLESS_PORT:-"443"}
 EMAIL=${EMAIL:-"ettsonskal@gmail.com"}
 

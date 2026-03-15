@@ -27,8 +27,8 @@ API_KEY = "AlufProxy:L3iKh38iFLD1GdCOJaaTmUlx4YNRwqjYKu8znbGFaDEOtpPgdGN7mfeFScR
 DATABASE_PATH = "keys.db"
 SERVER_DOMAIN = "alufproxy.ddns.net"
 SERVER_PORT = 443
-SNI_DOMAIN = "gosuslugi.ru"
-FALLBACK_DOMAIN = "gosuslugi.ru"
+SNI_DOMAIN = "vtb.ru"
+FALLBACK_DOMAIN = "vtb.ru"
 
 
 # Модели данных
@@ -102,7 +102,7 @@ def generate_vless_key(
     port: int,
     public_key: str,
     short_id: str,
-    sni: str = "gosuslugi.ru"
+    sni: str = "vtb.ru"
 ) -> str:
     """Генерация VLESS Reality ссылки"""
     from urllib.parse import urlencode
@@ -129,8 +129,8 @@ def generate_server_config(
     short_id: str,
     domain: str,
     port: int,
-    sni: str = "gosuslugi.ru",
-    fallback: str = "gosuslugi.ru"
+    sni: str = "vtb.ru",
+    fallback: str = "vtb.ru"
 ) -> dict:
     """Генерация конфигурации сервера XRay"""
     return {

@@ -23,9 +23,10 @@
         "security": "reality",
         "realitySettings": {
           "show": false,
-          "dest": "gosuslugi.ru:443",
+          "dest": "vtb.ru:443",
           "serverNames": [
-            "gosuslugi.ru"
+            "vtb.ru",
+            "www.vtb.ru"
           ],
           "privateKey": "REPLACE_WITH_PRIVATE_KEY",
           "shortIds": [
@@ -44,7 +45,7 @@
       "port": 8080,
       "protocol": "dokodemo-door",
       "settings": {
-        "address": "gosuslugi.ru",
+        "address": "vtb.ru",
         "port": 443,
         "network": "tcp"
       },

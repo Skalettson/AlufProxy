@@ -18,8 +18,8 @@ SERVER_API_KEY = os.getenv("SERVER_API_KEY", "")
 SERVER_DOMAIN = os.getenv("SERVER_DOMAIN", "alufproxy.ddns.net")
 SERVER_PORT = int(os.getenv("SERVER_PORT", "443"))
 VLESS_PORT = int(os.getenv("VLESS_PORT", "443"))
-VLESS_SNI = os.getenv("VLESS_SNI", "gosuslugi.ru")
-FALLBACK_DOMAIN = os.getenv("FALLBACK_DOMAIN", "gosuslugi.ru")
+VLESS_SNI = os.getenv("VLESS_SNI", "vtb.ru")
+FALLBACK_DOMAIN = os.getenv("FALLBACK_DOMAIN", "vtb.ru")
 
 # Тарифы
 TRIAL_DAYS = int(os.getenv("TRIAL_DAYS", "7"))

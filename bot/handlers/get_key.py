@@ -48,7 +48,7 @@ def create_get_key_handlers(db: Database, server_domain: str, server_port: int):
         config = generate_full_config(
             domain=SERVER_DOMAIN,
             port=SERVER_PORT,
-            sni="gosuslugi.ru"
+            sni="vtb.ru"
         )
         
         # Вычисляем дату истечения
