@@ -4,17 +4,16 @@ from aiogram.filters import Command
 from datetime import datetime
 import logging
 
-from config import BOT_TOKEN, TRIAL_DAYS, ADMIN_IDS
+from config import BOT_TOKEN, TRIAL_DAYS, ADMIN_IDS, SUPPORT_ENABLED
 from database import Database
-from keyboards.inline import get_start_keyboard, get_main_menu_keyboard, get_admin_keyboard
+from keyboards.inline import get_start_keyboard, get_main_menu_keyboard, get_admin_keyboard, get_support_keyboard
 
 logger = logging.getLogger(__name__)
-
-router = Router()
 
 
 def create_handlers(db: Database):
     """Создание обработчиков с передачей БД"""
+    router = Router()
     
     @router.message(Command("start"))
     async def cmd_start(message: Message):
@@ -33,6 +32,9 @@ def create_handlers(db: Database):
                 "Обратитесь к администратору для разблокировки."
             )
             return
+        
+        # Выход из режима поддержки при старте
+        db.set_support_mode(user_id, False)
         
         # Получаем информацию о подписке
         sub_end = db.get_subscription_end(user_id)
@@ -61,7 +63,8 @@ def create_handlers(db: Database):
         
         await message.answer(
             welcome_text,
-            reply_markup=get_start_keyboard()
+            reply_markup=get_start_keyboard(),
+            parse_mode="Markdown"
         )
 
     @router.message(Command("help"))
@@ -85,10 +88,41 @@ def create_handlers(db: Database):
             "• Проверь дату окончания подписки\n"
             "• Попробуй получить новый ключ\n"
             "• Обратись в поддержку\n\n"
-            "📧 **Поддержка:** @aluf_support"
+            "📧 **Поддержка:** @a_skale"
         )
         
-        await message.answer(help_text)
+        await message.answer(help_text, parse_mode="Markdown")
+
+    @router.message(Command("support"))
+    async def cmd_support(message: Message):
+        """Обработчик команды /support"""
+        user_id = message.from_user.id
+        username = message.from_user.username or "Unknown"
+        
+        if not SUPPORT_ENABLED:
+            await message.answer("❌ Поддержка временно недоступна.")
+            return
+        
+        # Проверяем, есть ли открытое обращение
+        ticket = db.get_user_open_ticket(user_id)
+        
+        if ticket:
+            await message.answer(
+                f"📞 **У вас уже есть открытое обращение #{ticket['id']}**\n\n"
+                "Напишите ваше сообщение, и оно будет доставлено администратору.",
+                parse_mode="Markdown"
+            )
+            # Включаем режим поддержки
+            db.set_support_mode(user_id, True)
+        else:
+            await message.answer(
+                "📞 **Поддержка AlufProxy**\n\n"
+                "Опишите вашу проблему, и администратор свяжется с вами.\n\n"
+                "✍️ Напишите сообщение прямо сейчас.",
+                parse_mode="Markdown"
+            )
+            # Включаем режим поддержки
+            db.set_support_mode(user_id, True)
 
     @router.message(Command("admin"))
     async def cmd_admin(message: Message):

@@ -207,10 +207,12 @@ AlufProxyfier/
 
 ---
 
-## 📞 Поддержка
+## 📞 Поддержка и контакты
 
-- Telegram: @aluf_support
-- GitHub Issues: [ссылка]
+- **Telegram бот:** [@AlufProxyBot](https://t.me/AlufProxyBot)
+- **Telegram разработчика:** [@a_skale](https://t.me/a_skale)
+- **GitHub:** [Skalettson](https://github.com/Skalettson)
+- **Issues:** [GitHub Issues](https://github.com/Skalettson/alufproxy/issues)
 
 ---
 

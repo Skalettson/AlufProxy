@@ -458,6 +458,106 @@ class AlufProxyGUI:
         )
         self.log_text.pack(fill="both", expand=True)
 
+        # === СОЦ. СЕТИ ===
+        social_frame = ctk.CTkFrame(main_frame, corner_radius=16, fg_color="transparent")
+        social_frame.pack(fill="x", pady=(15, 0))
+
+        social_header = ctk.CTkLabel(
+            social_frame,
+            text="🔗 Соц. сети",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=COLOR_PRIMARY,
+            anchor="w"
+        )
+        social_header.pack(anchor="w", pady=(0, 10))
+
+        # Telegram бот
+        bot_frame = ctk.CTkFrame(social_frame, fg_color="transparent")
+        bot_frame.pack(fill="x", pady=(0, 8))
+
+        ctk.CTkLabel(
+            bot_frame,
+            text="🤖 Бот:",
+            font=ctk.CTkFont(size=12),
+            width=80,
+            anchor="w",
+            text_color="gray"
+        ).pack(side="left")
+
+        bot_btn = ctk.CTkButton(
+            bot_frame,
+            text="@AlufProxyBot",
+            font=ctk.CTkFont(size=12),
+            width=200,
+            height=32,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=1,
+            border_color=COLOR_PRIMARY,
+            text_color=COLOR_PRIMARY,
+            hover_color=COLOR_PRIMARY_HOVER,
+            command=lambda: self._open_link("https://t.me/AlufProxyBot")
+        )
+        bot_btn.pack(side="left")
+
+        # GitHub
+        github_frame = ctk.CTkFrame(social_frame, fg_color="transparent")
+        github_frame.pack(fill="x", pady=(0, 8))
+
+        ctk.CTkLabel(
+            github_frame,
+            text="💻 GitHub:",
+            font=ctk.CTkFont(size=12),
+            width=80,
+            anchor="w",
+            text_color="gray"
+        ).pack(side="left")
+
+        github_btn = ctk.CTkButton(
+            github_frame,
+            text="Skalettson",
+            font=ctk.CTkFont(size=12),
+            width=200,
+            height=32,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=1,
+            border_color=COLOR_PRIMARY,
+            text_color=COLOR_PRIMARY,
+            hover_color=COLOR_PRIMARY_HOVER,
+            command=lambda: self._open_link("https://github.com/Skalettson")
+        )
+        github_btn.pack(side="left")
+
+        # Разработчик
+        dev_frame = ctk.CTkFrame(social_frame, fg_color="transparent")
+        dev_frame.pack(fill="x", pady=(0, 8))
+
+        ctk.CTkLabel(
+            dev_frame,
+            text="👨‍💻 Разработчик:",
+            font=ctk.CTkFont(size=12),
+            width=80,
+            anchor="w",
+            text_color="gray"
+        ).pack(side="left")
+
+        dev_btn = ctk.CTkButton(
+            dev_frame,
+            text="@a_skale",
+            font=ctk.CTkFont(size=12),
+            width=200,
+            height=32,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=1,
+            border_color=COLOR_PRIMARY,
+            text_color=COLOR_PRIMARY,
+            hover_color=COLOR_PRIMARY_HOVER,
+            command=lambda: self._open_link("https://t.me/a_skale")
+        )
+        dev_btn.pack(side="left")
+
         return window
     
     def toggle_connection(self):
@@ -532,6 +632,13 @@ class AlufProxyGUI:
     def show_error(self, message: str):
         """Показ ошибки"""
         self.log_text.insert("end", f"✗ {message}\n")
+        self.log_text.see("end")
+    
+    def _open_link(self, url: str):
+        """Открытие ссылки в браузере"""
+        import webbrowser
+        webbrowser.open(url)
+        self.log_text.insert("end", f"→ Открыто: {url}\n")
         self.log_text.see("end")
     
     def create_tray_icon(self):

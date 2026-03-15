@@ -199,10 +199,12 @@ AlufProxyfier/
 
 ---
 
-## 📞 Поддержка
+## 📞 Поддержка и контакты
 
-- Telegram: @aluf_support
-- GitHub Issues: https://github.com/your-username/alufproxy/issues
+- **Telegram бот:** [@AlufProxyBot](https://t.me/AlufProxyBot) — получение ключей
+- **Telegram разработчика:** [@a_skale](https://t.me/a_skale) — связь с разработчиком
+- **GitHub:** [Skalettson](https://github.com/Skalettson) — исходный код
+- **Issues:** [GitHub Issues](https://github.com/Skalettson/alufproxy/issues) — баги и фичи
 
 ---
 

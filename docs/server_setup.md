@@ -40,7 +40,7 @@ ssh root@your-vps-ip
 
 ```bash
 # Скачиваем скрипт установки
-wget https://raw.githubusercontent.com/your-repo/AlufProxyfier/main/server/install.sh
+wget https://raw.githubusercontent.com/Skalettson/AlufProxy/main/server/install.sh
 chmod +x install.sh
 
 # Запускаем с настройками
