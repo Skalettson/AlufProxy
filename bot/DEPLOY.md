@@ -164,9 +164,9 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/alufproxy/bot
-Environment="PATH=/root/alufproxy/bot/venv/bin"
-ExecStart=/root/alufproxy/bot/venv/bin/python3 railway_bot.py
+WorkingDirectory=/root/AlufProxy/AlufProxy/bot
+Environment="PATH=/root/AlufProxy/AlufProxy/bot/venv/bin"
+ExecStart=/root/AlufProxy/AlufProxy/bot/venv/bin/python3 railway_bot.py
 Restart=always
 RestartSec=5
 StandardOutput=journal

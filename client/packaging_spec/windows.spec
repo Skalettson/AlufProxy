@@ -10,7 +10,7 @@ import customtkinter
 ctk_path = os.path.dirname(customtkinter.__file__)
 
 a = Analysis(
-    [os.path.join(os.path.dirname(SPEC), os.pardir, 'aluf_client.py')],
+    ['aluf_client.py'],
     pathex=[],
     binaries=[],
     datas=[(ctk_path, 'customtkinter/')],
@@ -23,11 +23,19 @@ a = Analysis(
         'cryptography.hazmat.primitives.ciphers.modes',
         'cryptography.hazmat.backends.openssl',
         'pywin32',
+        'vless_protocol',
+        'socks5_server',
+        'dpi_helper',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'matplotlib',
+        'numpy',
+        'scipy',
+        'pandas',
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

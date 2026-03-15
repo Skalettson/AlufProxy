@@ -6,7 +6,7 @@ import asyncio
 
 from config import ADMIN_IDS, DEFAULT_SUBSCRIPTION_DAYS
 from database import Database
-from utils.key_generator import generate_uuid, generate_reality_keys, generate_short_id, generate_vless_key
+from utils.key_generator import generate_full_config
 from keyboards.inline import get_key_actions_keyboard, get_main_menu_keyboard, get_back_keyboard
 
 logger = logging.getLogger(__name__)
@@ -44,47 +44,39 @@ def create_get_key_handlers(db: Database, server_domain: str, server_port: int):
         # Показываем индикатор загрузки
         await callback.answer("⏳ Генерирую ключ...", show_alert=False)
         
-        # Генерируем ключ
-        uuid_key = generate_uuid()
-        public_key, private_key = generate_reality_keys()
-        short_id = generate_short_id()
-        
-        vless_key = generate_vless_key(
-            uuid_key=uuid_key,
-            server_domain=server_domain,
-            server_port=server_port,
-            sni="gosuslugi.ru",
-            public_key=public_key,
-            short_id=short_id
+        # Генерируем конфигурацию
+        config = generate_full_config(
+            domain=SERVER_DOMAIN,
+            port=SERVER_PORT,
+            sni="gosuslugi.ru"
         )
         
         # Вычисляем дату истечения
         expires_at = sub_end
         
         # Сохраняем ключ в БД
-        key_id = uuid_key
-        db.add_key(key_id, user_id, vless_key, expires_at)
+        db.add_key(config['uuid'], user_id, config['vless_key'], expires_at)
         
         # Формируем сообщение
         days_left = (expires_at - datetime.now()).days
         
         key_message = (
-            "✅ **Ключ успешно сгенерирован!**\n\n"
-            "🔑 **Ваш VLESS ключ:**\n"
-            f"```\n{vless_key}\n```\n\n"
-            "📅 **Действует до:** {:%d.%m.%Y}\n".format(expires_at) +
+            f"✅ **Ключ успешно сгенерирован!**\n\n"
+            f"🔑 **Ваш VLESS ключ:**\n"
+            f"```\n{config['vless_key']}\n```\n\n"
+            f"📅 **Действует до:** {expires_at.strftime('%d.%m.%Y')}\n"
             f"⏳ **Осталось дней:** {days_left}\n\n"
-            "📱 **Как использовать:**\n"
-            "1. Скопируйте ключ (нажмите на него)\n"
-            "2. Вставьте в AlufProxy Client или другой совместимый клиент\n"
-            "3. Подключайтесь!\n\n"
-            "⚠️ **Не делитесь ключом!** Он персональный."
+            f"📱 **Как использовать:**\n"
+            f"1. Скопируйте ключ (нажмите на него)\n"
+            f"2. Вставьте в AlufProxy Client или другой совместимый клиент\n"
+            f"3. Подключайтесь!\n\n"
+            f"⚠️ **Не делитесь ключом!** Он персональный."
         )
         
         # Отправляем ключ с кнопками
         await callback.message.answer(
             key_message,
-            reply_markup=get_key_actions_keyboard(key_id),
+            reply_markup=get_key_actions_keyboard(config['uuid']),
             parse_mode="Markdown"
         )
         
