@@ -2,7 +2,6 @@ from aiogram import Router, F, types
 from aiogram.types import CallbackQuery, Message
 from datetime import datetime, timedelta
 import logging
-import asyncio
 
 from config import ADMIN_IDS, DEFAULT_SUBSCRIPTION_DAYS
 from database import Database
@@ -43,19 +42,28 @@ def create_get_key_handlers(db: Database, server_domain: str, server_port: int):
         
         # Показываем индикатор загрузки
         await callback.answer("⏳ Генерирую ключ...", show_alert=False)
-        
+
+        logger.info(f"🔑 Генерация ключа для пользователя {user_id} (@{callback.from_user.username})")
+
         # Генерируем конфигурацию
         config = generate_full_config(
             domain=SERVER_DOMAIN,
-            port=SERVER_PORT,
-            sni="vtb.ru"
+            port=SERVER_PORT
+            # SNI берётся из конфига по умолчанию
         )
-        
+
+        # Логирование результата синхронизации
+        if config.get('sync_success'):
+            logger.info(f"✅ Синхронизация с сервером: {config.get('sync_message', 'OK')}")
+        else:
+            logger.warning(f"⚠️ Синхронизация не удалась: {config.get('sync_message', 'Unknown error')}")
+
         # Вычисляем дату истечения
         expires_at = sub_end
-        
+
         # Сохраняем ключ в БД
         db.add_key(config['uuid'], user_id, config['vless_key'], expires_at)
+        logger.info(f"✅ Ключ сохранён в БД: {config['uuid'][:8]}...")
         
         # Формируем сообщение
         days_left = (expires_at - datetime.now()).days

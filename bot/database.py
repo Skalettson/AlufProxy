@@ -30,7 +30,9 @@ class Database:
                     registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     is_banned INTEGER DEFAULT 0,
                     subscription_end TIMESTAMP,
-                    in_support_mode INTEGER DEFAULT 0
+                    in_support_mode INTEGER DEFAULT 0,
+                    payment_status TEXT DEFAULT 'none',
+                    payment_ticket_id INTEGER DEFAULT 0
                 )
             """)
             conn.execute("""
@@ -51,6 +53,7 @@ class Database:
                     user_id INTEGER NOT NULL,
                     username TEXT,
                     status TEXT DEFAULT 'open',
+                    type TEXT DEFAULT 'support',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     closed_at TIMESTAMP,
@@ -80,6 +83,20 @@ class Database:
                     FOREIGN KEY (key_id) REFERENCES keys(id)
                 )
             """)
+            
+            # Добавляем новые колонки если их нет
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN payment_status TEXT DEFAULT 'none'")
+            except:
+                pass
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN payment_ticket_id INTEGER DEFAULT 0")
+            except:
+                pass
+            try:
+                conn.execute("ALTER TABLE support_tickets ADD COLUMN type TEXT DEFAULT 'support'")
+            except:
+                pass
             conn.commit()
 
     def add_user(self, user_id: int, username: str, first_name: str) -> bool:
@@ -122,16 +139,89 @@ class Database:
                 user = self.get_user(user_id)
                 if not user:
                     return False
-                
+
                 current_end = self.get_subscription_end(user_id)
                 if current_end and current_end > datetime.now():
                     new_end = current_end + timedelta(days=days)
                 else:
                     new_end = datetime.now() + timedelta(days=days)
-                
+
                 conn.execute(
                     "UPDATE users SET subscription_end = ? WHERE id = ?",
                     (new_end.isoformat(), user_id)
+                )
+                conn.commit()
+                return True
+        except Exception:
+            return False
+
+    def set_payment_status(self, user_id: int, status: str, ticket_id: int = 0) -> bool:
+        """
+        Установка статуса оплаты
+        status: 'none', 'pending', 'paid'
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    "UPDATE users SET payment_status = ?, payment_ticket_id = ? WHERE id = ?",
+                    (status, ticket_id, user_id)
+                )
+                conn.commit()
+                return True
+        except Exception:
+            return False
+
+    def get_payment_status(self, user_id: int) -> tuple:
+        """Получение статуса оплаты"""
+        user = self.get_user(user_id)
+        if user:
+            return user.get('payment_status', 'none'), user.get('payment_ticket_id', 0)
+        return 'none', 0
+
+    def create_payment_ticket(self, user_id: int, username: str, months: int, amount: int) -> int:
+        """Создание заявки на оплату"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute(
+                    """INSERT INTO support_tickets (user_id, username, status, type) 
+                       VALUES (?, ?, 'open', 'payment')""",
+                    (user_id, username)
+                )
+                ticket_id = cursor.lastrowid
+                
+                # Добавляем сообщение с деталями оплаты
+                conn.execute(
+                    """INSERT INTO support_messages (ticket_id, user_id, message, is_from_admin)
+                       VALUES (?, ?, ?, 0)""",
+                    (ticket_id, user_id, f"Оплата подписки на {months} мес. ({amount} руб.)")
+                )
+                
+                conn.commit()
+                return ticket_id
+        except Exception as e:
+            logger.error(f"Ошибка создания заявки: {e}")
+            return 0
+
+    def get_payment_tickets(self) -> List[Dict]:
+        """Получение всех активных заявок на оплату"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                """SELECT t.*, u.username, u.first_name 
+                   FROM support_tickets t
+                   JOIN users u ON t.user_id = u.id
+                   WHERE t.type = 'payment' AND t.status = 'open'
+                   ORDER BY t.created_at DESC"""
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def close_ticket(self, ticket_id: int, status: str = 'closed') -> bool:
+        """Закрытие заявки"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    "UPDATE support_tickets SET status = ?, closed_at = ? WHERE id = ?",
+                    (status, datetime.now().isoformat(), ticket_id)
                 )
                 conn.commit()
                 return True
@@ -209,6 +299,16 @@ class Database:
             )
             return [dict(row) for row in cursor.fetchall()]
 
+    def get_active_keys_raw(self) -> List[Dict]:
+        """Получение всех активных ключей (для API очистки)"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT id, user_id, key, expires_at, is_active FROM keys WHERE is_active = 1 AND expires_at > ?",
+                (datetime.now().isoformat(),)
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
     def deactivate_key(self, key_id: str) -> bool:
         """Деактивация ключа"""
         try:
@@ -254,6 +354,158 @@ class Database:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute("SELECT * FROM users ORDER BY registered_at DESC")
             return [dict(row) for row in cursor.fetchall()]
+
+    def get_users_paginated(self, limit: int = 50, offset: int = 0) -> List[Dict]:
+        """Получение пользователей с пагинацией"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT * FROM users ORDER BY registered_at DESC LIMIT ? OFFSET ?",
+                (limit, offset)
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def search_users(self, query: str) -> List[Dict]:
+        """Поиск пользователей по username или id"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT * FROM users WHERE username LIKE ? OR id = ? ORDER BY registered_at DESC",
+                (f"%{query}%", query)
+            )
+            return [dict(row) for row in cursor.fetchall]
+
+    def get_user_full(self, user_id: int) -> Optional[Dict]:
+        """Получение полной информации о пользователе"""
+        user = self.get_user(user_id)
+        if not user:
+            return None
+        
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            
+            # Ключи
+            keys = conn.execute(
+                "SELECT * FROM keys WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,)
+            ).fetchall()
+            
+            # Заявки
+            tickets = conn.execute(
+                "SELECT * FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,)
+            ).fetchall()
+            
+            user_dict = dict(user)
+            user_dict['keys'] = [dict(k) for k in keys]
+            user_dict['tickets'] = [dict(t) for t in tickets]
+            
+            return user_dict
+
+    def extend_subscription_by_id(self, user_id: int, days: int) -> tuple:
+        """Продление подписки по ID пользователя"""
+        try:
+            user = self.get_user(user_id)
+            if not user:
+                return False, "Пользователь не найден"
+            
+            current_end = self.get_subscription_end(user_id)
+            if current_end and current_end > datetime.now():
+                new_end = current_end + timedelta(days=days)
+            else:
+                new_end = datetime.now() + timedelta(days=days)
+            
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    "UPDATE users SET subscription_end = ? WHERE id = ?",
+                    (new_end.isoformat(), user_id)
+                )
+                conn.commit()
+            
+            return True, new_end
+        except Exception as e:
+            return False, str(e)
+
+    def delete_key(self, key_id: str) -> bool:
+        """Удаление ключа"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("DELETE FROM keys WHERE id = ?", (key_id,))
+                conn.commit()
+                return True
+        except Exception:
+            return False
+
+    def get_all_keys(self, limit: int = 100) -> List[Dict]:
+        """Получение всех ключей"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT k.*, u.username FROM keys k JOIN users u ON k.user_id = u.id ORDER BY k.created_at DESC LIMIT ?",
+                (limit,)
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_advanced_stats(self) -> Dict:
+        """Расширенная статистика"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            
+            # Пользователи по статусам
+            total = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            active = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE subscription_end > ?",
+                (datetime.now().isoformat(),)
+            ).fetchone()[0]
+            banned = conn.execute("SELECT COUNT(*) FROM users WHERE is_banned = 1").fetchone()[0]
+            
+            # Подписки по срокам
+            trial = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE payment_status = 'trial'"
+            ).fetchone()[0]
+            paid = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE payment_status = 'paid' AND subscription_end > ?",
+                (datetime.now().isoformat(),)
+            ).fetchone()[0]
+            pending = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE payment_status = 'pending'"
+            ).fetchone()[0]
+            
+            # Заявки
+            open_tickets = conn.execute(
+                "SELECT COUNT(*) FROM support_tickets WHERE status = 'open'"
+            ).fetchone()[0]
+            payment_tickets = conn.execute(
+                "SELECT COUNT(*) FROM support_tickets WHERE type = 'payment' AND status = 'open'"
+            ).fetchone()[0]
+            
+            # Ключи
+            total_keys = conn.execute("SELECT COUNT(*) FROM keys").fetchone()[0]
+            active_keys = conn.execute(
+                "SELECT COUNT(*) FROM keys WHERE is_active = 1 AND expires_at > ?",
+                (datetime.now().isoformat(),)
+            ).fetchone()[0]
+            
+            # Топ пользователей по ключам
+            top_users = conn.execute(
+                "SELECT u.username, u.id, COUNT(k.id) as key_count "
+                "FROM users u LEFT JOIN keys k ON u.id = k.user_id "
+                "GROUP BY u.id ORDER BY key_count DESC LIMIT 5"
+            ).fetchall()
+            
+            return {
+                'total_users': total,
+                'active_users': active,
+                'banned_users': banned,
+                'trial_users': trial,
+                'paid_users': paid,
+                'pending_payment': pending,
+                'open_tickets': open_tickets,
+                'payment_tickets': payment_tickets,
+                'total_keys': total_keys,
+                'active_keys': active_keys,
+                'top_users': [dict(u) for u in top_users]
+            }
 
     # === Support Tickets ===
     
@@ -324,19 +576,6 @@ class Database:
                 "SELECT * FROM support_tickets WHERE status = 'open' ORDER BY updated_at ASC"
             )
             return [dict(row) for row in cursor.fetchall()]
-
-    def close_ticket(self, ticket_id: int) -> bool:
-        """Закрытие обращения"""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                conn.execute(
-                    "UPDATE support_tickets SET status = 'closed', closed_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (ticket_id,)
-                )
-                conn.commit()
-                return True
-        except Exception:
-            return False
 
     def get_users_in_support_mode(self) -> List[Dict]:
         """Получение пользователей в режиме поддержки"""

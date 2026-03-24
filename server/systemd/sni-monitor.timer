@@ -1,0 +1,23 @@
+[Unit]
+Description=Run SNI Monitor every 2 minutes
+Documentation=https://github.com/AlufProxy/AlufProxyfier
+Requires=sni-monitor.service
+
+[Timer]
+# Запуск через 1 минуту после загрузки
+OnBootSec=1min
+
+# Запуск каждые 2 минуты
+OnUnitActiveSec=2min
+
+# Привязка к сервису
+Unit=sni-monitor.service
+
+# Включение точного таймера (для отладки)
+AccuracySec=10s
+
+# Логирование
+Persistent=true
+
+[Install]
+WantedBy=timers.target

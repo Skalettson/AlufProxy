@@ -1,0 +1,16 @@
+[Unit]
+Description=XRay Key Update API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/AlufProxy/AlufProxy/server
+Environment="PATH=/root/AlufProxy/AlufProxy/server/venv/bin"
+ExecStart=/root/AlufProxy/AlufProxy/server/venv/bin/python3 key_update_api.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

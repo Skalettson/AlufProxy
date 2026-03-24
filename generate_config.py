@@ -2,6 +2,8 @@
 """
 Генератор тестовых конфигураций для AlufProxy
 Создаёт тестовые ключи, конфиги для сервера и клиента
+
+Поддержка автовыбора SNI из пула доменов.
 """
 
 import json
@@ -10,8 +12,86 @@ import hashlib
 import secrets
 import base64
 import argparse
+import random
+import subprocess
 from datetime import datetime
 from pathlib import Path
+
+
+# Пул SNI доменов (актуально на 16.03.2026)
+SNI_DOMAINS = {
+    "priority_5": [
+        "www.microsoft.com", "microsoft.com",
+        "www.apple.com", "apple.com",
+        "gateway.icloud.com", "itunes.apple.com",
+        "www.nvidia.com", "www.cisco.com", "www.amd.com",
+    ],
+    "priority_4": [
+        "www.bbc.co.uk", "www.theguardian.com",
+        "www.netflix.com", "www.spotify.com",
+        "www.telegram.org", "www.whatsapp.com",
+    ],
+    "priority_3": [
+        "www.gosuslugi.ru", "gosuslugi.ru",
+        "www.sberbank.ru", "sberbank.ru",
+        "www.yandex.ru", "yandex.ru",
+        "www.amazon.com", "www.visa.com",
+    ],
+}
+
+
+def check_sni_available(domain: str, timeout: int = 5) -> bool:
+    """
+    Проверка доступности SNI домена.
+    
+    Args:
+        domain: Домен для проверки
+        timeout: Таймаут в секундах
+        
+    Returns:
+        True если домен доступен
+    """
+    try:
+        result = subprocess.run(
+            ["curl", "-kI", "-s", "-o", "/dev/null",
+             "--connect-timeout", str(timeout),
+             f"https://{domain}:443"],
+            timeout=timeout + 2,
+            capture_output=True
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def find_working_sni(domains: list = None, timeout: int = 5) -> str:
+    """
+    Поиск рабочего SNI домена.
+    
+    Args:
+        domains: Список доменов для проверки
+        timeout: Таймаут проверки
+        
+    Returns:
+        Первый рабочий домен или случайный из priority_5
+    """
+    if domains is None:
+        domains = SNI_DOMAINS["priority_5"] + SNI_DOMAINS["priority_4"]
+    
+    print(f"🔍 Поиск рабочего SNI среди {len(domains)} доменов...")
+    
+    for i, domain in enumerate(domains, 1):
+        if i % 5 == 0:
+            print(f"  Проверено {i}/{len(domains)} доменов...")
+        
+        if check_sni_available(domain, timeout):
+            print(f"✅ Найден рабочий домен: {domain}")
+            return domain
+    
+    # Если ничего не найдено, возвращаем случайный из priority_5
+    fallback = random.choice(SNI_DOMAINS["priority_5"])
+    print(f"⚠️ Не найдено рабочих доменов, используем {fallback}")
+    return fallback
 
 
 def generate_uuid() -> str:
@@ -138,27 +218,41 @@ def main():
     parser = argparse.ArgumentParser(description="Генератор конфигураций AlufProxy")
     parser.add_argument("--host", default="proxy.example.com", help="Домен сервера")
     parser.add_argument("--port", type=int, default=443, help="Порт сервера")
-    parser.add_argument("--sni", default="gosuslugi.ru", help="SNI домен")
-    parser.add_argument("--fallback", default="gosuslugi.ru", help="Fallback домен")
+    parser.add_argument("--sni", default=None, help="SNI домен (или --auto-sni для автовыбора)")
+    parser.add_argument("--fallback", default=None, help="Fallback домен")
     parser.add_argument("--output", default="generated_config", help="Префикс выходных файлов")
-    
+    parser.add_argument("--auto-sni", action="store_true", help="Автоматический выбор рабочего SNI")
+    parser.add_argument("--timeout", type=int, default=5, help="Таймаут проверки SNI в секундах")
+
     args = parser.parse_args()
-    
+
     print("=" * 60)
     print("  AlufProxy - Генератор конфигураций")
     print("=" * 60)
     print()
-    
+
+    # Автовыбор SNI если указано
+    if args.auto_sni or args.sni is None:
+        print(" Автоматический выбор SNI...")
+        args.sni = find_working_sni(timeout=args.timeout)
+        if args.fallback is None:
+            args.fallback = args.sni
+    else:
+        if args.fallback is None:
+            args.fallback = args.sni
+
     # Генерируем ключи
     print("Генерация ключей...")
     uuid_key = generate_uuid()
     private_key, public_key = generate_reality_keys()
     short_id = generate_short_id()
-    
+
     print(f"  UUID:        {uuid_key}")
     print(f"  Private Key: {private_key[:40]}...")
     print(f"  Public Key:  {public_key[:40]}...")
     print(f"  Short ID:    {short_id}")
+    print(f"  SNI:         {args.sni}")
+    print(f"  Fallback:    {args.fallback}")
     print()
     
     # Генерируем VLESS ключ

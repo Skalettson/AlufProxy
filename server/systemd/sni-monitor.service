@@ -1,0 +1,35 @@
+[Unit]
+Description=SNI Monitor for XRay Reality
+Documentation=https://github.com/AlufProxy/AlufProxyfier
+After=network.target xray.service
+Wants=xray.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /root/AlufProxy/AlufProxy/server/sni_updater.py --notify
+User=root
+Group=root
+
+# Working directory
+WorkingDirectory=/root/AlufProxy/AlufProxy/server
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sni-monitor
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/xray /var/lib/xray /etc/xray
+
+# Timeout
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

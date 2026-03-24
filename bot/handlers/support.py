@@ -54,14 +54,14 @@ def create_get_key_handlers(db: Database, server_domain: str, server_port: int):
         uuid_key = generate_uuid()
         public_key, private_key = generate_reality_keys()
         short_id = generate_short_id()
-        
+
         vless_key = generate_vless_key(
             uuid_key=uuid_key,
             server_domain=server_domain,
             server_port=server_port,
-            sni="vtb.ru",
             public_key=public_key,
             short_id=short_id
+            # SNI берётся из конфига по умолчанию
         )
         
         # Вычисляем дату истечения
